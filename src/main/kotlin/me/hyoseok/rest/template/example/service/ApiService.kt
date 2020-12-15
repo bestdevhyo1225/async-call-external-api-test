@@ -16,7 +16,7 @@ class ApiService<T>(private val restTemplate: RestTemplate) {
     }
 
     fun post(url: String, httpHeaders: HttpHeaders, body: Any?, clazz: Class<T>): ResponseEntity<T> {
-        return callApiEndpoint(url, HttpMethod.GET, httpHeaders, body, clazz)
+        return callApiEndpoint(url, HttpMethod.POST, httpHeaders, body, clazz)
     }
 
     private fun callApiEndpoint(
