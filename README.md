@@ -82,7 +82,7 @@ class ApiController(
 
 <br>
 
-### 비동기 호출 방식 테스트 결과 (Async)
+## 비동기 호출 방식 테스트 결과 (Async)
 
 비동기 호출 방식을 테스트 하기 위한 코드는 아래와 같다. `@Async` 어노테이션과 `ThreadPoolTaskExecutor`를 활용했다. `ThreadPoolTaskExecutor`를 사용하지 않으면, 비동기
 작업을 `Thread Pool`에서 처리하는 것이 아니라 새로운 스레드를 매번 생성해서 작업을 하기때문에 굉장히 비효율적이다.
