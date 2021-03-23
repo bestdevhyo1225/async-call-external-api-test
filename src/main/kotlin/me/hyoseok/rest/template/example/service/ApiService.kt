@@ -1,6 +1,5 @@
 package me.hyoseok.rest.template.example.service
 
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
