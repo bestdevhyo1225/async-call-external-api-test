@@ -41,6 +41,18 @@ class ApiController(
         logger.info("[ Sync Result ] execution time = " + (endTime - startTime))
     }
 
+    @GetMapping(value = ["/call-sync2"])
+    fun callSync2() {
+        val startTime: Long = System.currentTimeMillis()
+
+        val name: String = syncService.callAsyncMyName()
+
+        val endTime: Long = System.currentTimeMillis()
+
+        logger.info("[ Sync 2 Result ] name = $name")
+        logger.info("[ Sync 2 Result ] execution time = " + (endTime - startTime))
+    }
+
     @GetMapping(value = ["/call-async"])
     fun callAsync() {
         val startTime: Long = System.currentTimeMillis()
@@ -54,5 +66,32 @@ class ApiController(
                 logger.info("[ Async Result ] value $s")
                 logger.info("[ Async Result ] execution time = " + (endTime - startTime))
             }
+    }
+
+    @GetMapping(value = ["/call-async2"])
+    fun callAsync2() {
+        val startTime: Long = System.currentTimeMillis()
+
+        val result: CompletableFuture<String> = asyncService.callAsyncMyName()
+
+        result.thenAccept {
+            val endTime: Long = System.currentTimeMillis()
+            logger.info("[ Async 2 Result ] name = $it")
+            logger.info("[ Async 2 Result ] execution time = " + (endTime - startTime))
+        }
+    }
+
+    @GetMapping(value = ["/call-async3"])
+    fun callAsync3() {
+        val startTime: Long = System.currentTimeMillis()
+
+        val result: CompletableFuture<String> = asyncService.callAsyncMyName()
+
+        val name: String = result.join()
+
+        val endTime: Long = System.currentTimeMillis()
+
+        logger.info("[ Async 3 Result ] name = $name")
+        logger.info("[ Async 3 Result ] execution time = " + (endTime - startTime))
     }
 }

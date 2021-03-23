@@ -41,4 +41,14 @@ class SyncService {
 
         return "callSyncSecond"
     }
+
+    fun callAsyncMyName(): String {
+        try {
+            Thread.sleep(2000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return "callAsyncMyName"
+    }
 }

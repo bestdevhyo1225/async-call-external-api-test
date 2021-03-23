@@ -45,4 +45,15 @@ class AsyncService {
 
         return CompletableFuture.completedFuture("callAsyncSecond")
     }
+
+    @Async(value = "threadPoolTaskExecutor")
+    fun callAsyncMyName(): CompletableFuture<String> {
+        try {
+            Thread.sleep(2000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return CompletableFuture.completedFuture("callAsyncMyName")
+    }
 }
