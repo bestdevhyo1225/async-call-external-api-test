@@ -3,6 +3,7 @@ package me.hyoseok.rest.template.example.controller
 import me.hyoseok.rest.template.example.service.AsyncService
 import me.hyoseok.rest.template.example.service.ProductService
 import me.hyoseok.rest.template.example.service.SyncService
+import me.hyoseok.rest.template.example.service.TransactionHandlerService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.*
 import org.springframework.http.ResponseEntity
@@ -11,11 +12,12 @@ import org.springframework.web.bind.annotation.*
 import java.util.concurrent.CompletableFuture
 
 @RestController
-@RequestMapping(value = ["api"])
+@RequestMapping(value = ["/api"])
 class ApiController(
     private val productService: ProductService,
     private val asyncService: AsyncService,
-    private val syncService: SyncService
+    private val syncService: SyncService,
+    private val transactionHandlerService: TransactionHandlerService
 ) {
 
     private val logger: Logger = getLogger(ApiController::class.java)
@@ -93,5 +95,10 @@ class ApiController(
 
         logger.info("[ Async 3 Result ] name = $name")
         logger.info("[ Async 3 Result ] execution time = " + (endTime - startTime))
+    }
+
+    @GetMapping(value = ["/transaction"])
+    fun transaction() {
+        transactionHandlerService.handle()
     }
 }
