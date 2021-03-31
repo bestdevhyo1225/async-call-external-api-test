@@ -348,7 +348,7 @@ class TransactionBService {
 
 > @Transactional 어노테이션이 부모 트랜잭션(TransactionalHandler) 에서 자식 트랜잭션(TransactionAService, TransactionBService) 으로 전파되는지?
 
-- 3개의 스레드가 실행되기 때문에 `3개의 트랜잭션이 별도로 수행된다.` (`Spring MVC`에서 `컨테이너`는 `스레드마다 각각의 트랜잭션을 할당한다.`)
+- 3개의 스레드가 실행되기 때문에 `부모의 트랜잭션이 자식으로 전파되지 않고, 3개의 트랜잭션이 별도로 수행된다.` (`Spring MVC`에서 `컨테이너`는 `스레드마다 각각의 트랜잭션을 할당한다.`)
 
 - `TransactionalHandler`의 트랜잭션
   
