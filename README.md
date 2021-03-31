@@ -179,3 +179,185 @@ class ApiController(
 
 총 수행시간이 `3초`인 이유는 `callAsyncFirst()` 메소드를 호출할 때 `lTaskExecutor-1` 스레드에서 처리되며, `callAsyncSecond()` 메소드를 호출할
 때 `lTaskExecutor-2` 처리된다. 즉, `2개의 메소드`는 `별개의 스레드`에서 `각각 처리`되기 때문에 `callAsyncSecond()` 메소드는 `callAsyncFirst()` 메소드의 결과를 기다릴 필요가 없다.
+
+## 동기 방식에서 실행되는 스레드의 갯수와 트랜잭션 전파 여부 확인
+
+```kotlin
+@Service
+@Transactional
+class TransactionalHandler(
+    private val transactionAService: TransactionAService,
+    private val transactionBService: TransactionBService
+) {
+    
+    fun handleSync() {
+        logger.info("[ TransactionHandler ] CurrentTransactionName  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        val startTime: Long = System.currentTimeMillis()
+
+        val aServiceResult: String = transactionAService.executeSync()
+        val bServiceResult: String = transactionBService.executeSync()
+
+        val endTime: Long = System.currentTimeMillis()
+
+        logger.info("[ TransactionHandler ] combineResult = $aServiceResult + $bServiceResult")
+        logger.info("[ TransactionHandler ] execution time = " + (endTime - startTime))
+    }
+}
+```
+```kotlin
+@Service
+@Transactional
+class TransactionAService {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+
+    fun executeSync(): String {
+
+        logger.info("[ A Service ] CurrentTransactionName  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        try {
+            Thread.sleep(3000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return "Success A Service!!"
+    }
+}
+```
+```kotlin
+@Service
+@Transactional
+class TransactionBService {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+
+    fun executeSync(): String {
+
+        logger.info("[ B Service ] CurrentTransactionName  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        try {
+            Thread.sleep(2000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return "Success B Service!!"
+    }
+}
+```
+
+![스크린샷 2021-03-31 오후 4 08 31](https://user-images.githubusercontent.com/23515771/113104308-57e0ad00-923b-11eb-91b5-aa41282fc6cf.png)
+
+> 실행되는 스레드의 갯수는?
+
+- `nio-9000-exec-1`의 이름을 가진 스레드 `1개`에서 모든 작업을 수행하고 있다.
+
+> @Transactional 어노테이션이 부모 트랜잭션(TransactionalHandler) 에서 자식 트랜잭션(TransactionAService, TransactionBService) 으로 전파되는지?
+
+- `Handler, AService, BSerivce` 모두 `me.hyoseok.rest.template.example.service.TransactionHandler.handleSync` 트랜잭션에서 수행되고 있음을 확인할 수 있다.
+
+## 비동기 방식에서 실행되는 스레드의 갯수와 트랜잭션 전파 여부 확인
+
+```kotlin
+@Service
+@Transactional
+class TransactionHandler(
+    private val transactionAService: TransactionAService,
+    private val transactionBService: TransactionBService
+) {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+
+    fun handle() {
+
+        logger.info("[ TransactionHandler ] Transaction  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        val startTime: Long = System.currentTimeMillis()
+
+        val aServiceResult: CompletableFuture<String> = transactionAService.execute()
+        val bServiceResult: CompletableFuture<String> = transactionBService.execute()
+
+        aServiceResult.thenCombine(bServiceResult) { result1, result2 -> "$result1 + $result2" }
+            .thenAccept { combineResult ->
+                val endTime: Long = System.currentTimeMillis()
+
+                logger.info("[ TransactionHandler ] combineResult = $combineResult")
+                logger.info("[ TransactionHandler ] execution time = " + (endTime - startTime))
+            }
+    }
+}
+```
+```kotlin
+@Service
+@Transactional
+class TransactionAService {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+
+    @Async(value = "threadPoolTaskExecutor")
+    fun execute(): CompletableFuture<String> {
+
+        logger.info("[ A Service ] Transaction  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        try {
+            Thread.sleep(3000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return CompletableFuture.completedFuture("Success A Service!!")
+    }
+}
+```
+```kotlin
+@Service
+@Transactional
+class TransactionBService {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.javaClass)
+
+    @Async(value = "threadPoolTaskExecutor")
+    fun execute(): CompletableFuture<String> {
+
+        logger.info("[ B Service ] Transaction = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        try {
+            Thread.sleep(2000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return CompletableFuture.completedFuture("Success B Service!!")
+    }
+}
+```
+
+![스크린샷 2021-03-31 오후 4 16 39](https://user-images.githubusercontent.com/23515771/113105377-7b582780-923c-11eb-8ac5-757ba8251669.png)
+
+> 실행되는 스레드의 갯수는?
+
+- `Main 스레드`인 `nio-9000-exec-3` 스레드 실행
+
+- `스레드 풀`에 존재하는 `lTaskExecutor-2` 스레드 실행
+
+- `스레드 풀`에 존재하는 `lTaskExecutor-1` 스레드 실행
+
+- 총 `3개`의 스레드가 별 개의 작업을 수행한다.
+
+> @Transactional 어노테이션이 부모 트랜잭션(TransactionalHandler) 에서 자식 트랜잭션(TransactionAService, TransactionBService) 으로 전파되는지?
+
+- 3개의 스레드가 실행되기 때문에 `3개의 트랜잭션이 별도로 수행된다.` (`Spring MVC`에서 `컨테이너`는 `스레드마다 각각의 트랜잭션을 할당한다.`)
+
+- `TransactionalHandler`의 트랜잭션
+  
+    - me.hyoseok.rest.template.example.service.`TransactionHandler.handle`
+
+- `TransactionAService`의 트랜잭션
+
+    - me.hyoseok.rest.template.example.service.`TransactionAService.execute`
+
+- `TransactionBService`의 트랜잭션
+
+    - me.hyoseok.rest.template.example.service.`TransactionBService.execute`
