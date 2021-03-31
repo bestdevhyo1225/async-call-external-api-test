@@ -17,7 +17,7 @@ class TransactionAService {
     @Async(value = "threadPoolTaskExecutor")
     fun execute(): CompletableFuture<String> {
 
-        logger.info("[ A Service ] CurrentTransactionName  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+        logger.info("[ A Service ] Transaction  = " + TransactionSynchronizationManager.getCurrentTransactionName())
 
         try {
             Thread.sleep(3000)
@@ -26,5 +26,18 @@ class TransactionAService {
         }
 
         return CompletableFuture.completedFuture("Success A Service!!")
+    }
+
+    fun executeSync(): String {
+
+        logger.info("[ A Service ] Transaction  = " + TransactionSynchronizationManager.getCurrentTransactionName())
+
+        try {
+            Thread.sleep(3000)
+        } catch (exception: InterruptedException) {
+            exception.printStackTrace()
+        }
+
+        return "Success A Service!!"
     }
 }
