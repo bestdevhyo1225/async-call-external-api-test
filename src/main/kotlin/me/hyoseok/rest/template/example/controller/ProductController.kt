@@ -5,6 +5,7 @@ import me.hyoseok.rest.template.example.controller.request.UpdateProductRequest
 import me.hyoseok.rest.template.example.controller.request.UpdateProductStockRequest
 import me.hyoseok.rest.template.example.controller.response.SuccessResponse
 import me.hyoseok.rest.template.example.service.ProductCommandService
+import me.hyoseok.rest.template.example.service.ProductCommandLockService
 import me.hyoseok.rest.template.example.service.dto.CreateProductResult
 import me.hyoseok.rest.template.example.service.dto.UpdateProductStockResult
 import org.springframework.http.HttpStatus
@@ -15,7 +16,8 @@ import java.net.URI
 @RestController
 @RequestMapping(value = ["/products"])
 class ProductController(
-    private val productCommandService: ProductCommandService
+    private val productCommandService: ProductCommandService,
+    private val productCommandLockService: ProductCommandLockService
 ) {
 
     @PostMapping
@@ -48,6 +50,17 @@ class ProductController(
     ): ResponseEntity<SuccessResponse> {
         val updateProductStockResult: UpdateProductStockResult =
             productCommandService.updateStockCount(productId = productId, stockCount = request.stockCount)
+
+        return ResponseEntity.ok(SuccessResponse(data = updateProductStockResult))
+    }
+
+    @PatchMapping(value = ["/lock/{id}/stock-count"])
+    fun updateStockCountWithLock(
+        @PathVariable(value = "id") productId: Long,
+        @RequestBody request: UpdateProductStockRequest
+    ): ResponseEntity<SuccessResponse> {
+        val updateProductStockResult: UpdateProductStockResult =
+            productCommandLockService.updateStockCountWithLock(productId = productId, stockCount = request.stockCount)
 
         return ResponseEntity.ok(SuccessResponse(data = updateProductStockResult))
     }
